@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Add Train</h2>
+  <form method="post">
+    <label>Train No</label><input name="train_no" placeholder="e.g., 12345" required>
+    <label>Train Name</label><input name="train_name" placeholder="e.g., Rajdhani Express" required>
+    <label>Type</label>
+    <select name="type">
+      <option value="rajdhani">Rajdhani (Example)</option>
+      <option>passenger</option><option>express</option><option>superfast</option>
+      <option>shatabdi</option><option>duronto</option><option>vande_bharat</option>
+    </select>
+    <label>Base Fare Multiplier</label><input name="base_fare_multiplier" type="number" step="0.01" value="2.5" placeholder="e.g., 2.5" required>
+    <label>Route ID</label><input name="route_id" placeholder="e.g., R001 (Existing route id)" required>
+    <hr>
+    <h3>Schedule</h3>
+    <label>Schedule ID</label><input name="schedule_id" placeholder="e.g., S001" required>
+    <label>Start Time</label><input name="start_time" type="time" value="10:00" required>
+    <label>End Time</label><input name="end_time" type="time" value="18:00" required>
+    <label>Running Days</label><input name="running_days" placeholder="e.g., Mon,Wed,Fri">
+    <hr>
+    <h3>Class (optional, you can add one for now)</h3>
+    <label>Class ID</label><input name="class_id" placeholder="e.g., C001">
+    <label>Class Name</label><input name="class_name" placeholder="e.g., AC First Class">
+    <label>Coach Type</label>
+    <select name="coach_type">
+      <option value="">--</option>
+      <option value="ac">AC (Example)</option>
+      <option>sleeper</option><option>general</option>
+    </select>
+    <label>No. of Coaches</label><input name="no_of_coaches" type="number" placeholder="e.g., 5">
+    <label>Class Multiplier</label><input name="c_multiplier" type="number" step="0.01" placeholder="e.g., 3.0">
+    <button class="btn" type="submit">Create</button>
+  </form>
+</div>
+{% endblock %}

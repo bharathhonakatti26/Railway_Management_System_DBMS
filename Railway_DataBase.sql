@@ -1,3 +1,4 @@
+
 CREATE DATABASE IF NOT EXISTS railway_system;
 USE railway_system;
 
@@ -521,3 +522,149 @@ BEGIN
     RETURN booking_count;
 END//
 DELIMITER ;
+
+INSERT INTO user VALUES
+('U001','Amit Sharma','amit@gmail.com','pass123','1995-03-12','male','Mumbai','Maharashtra','400001','passenger'),
+('U002','Riya Verma','riya@gmail.com','pass123','1997-08-22','female','Delhi','Delhi','110001','passenger'),
+('U003','Karan Singh','karan@gmail.com','pass123','1990-05-10','male','Chennai','Tamil Nadu','600001','passenger'),
+('U004','Sneha Rao','sneha@gmail.com','pass123','1998-12-01','female','Bengaluru','Karnataka','560001','passenger'),
+('U005','Vikram Desai','vikram@gmail.com','pass123','1988-11-05','male','Pune','Maharashtra','411001','employee'),
+('U006','Admin','admin@gmail.com','adminpass','1980-01-01','male','Delhi','Delhi','110001','admin'),
+('U007','John Doe','john@gmail.com','pass123','1992-04-16','male','Hyderabad','Telangana','500001','passenger'),
+('U008','Neha Kapoor','neha@gmail.com','pass123','2000-09-12','female','Jaipur','Rajasthan','302001','passenger'),
+('U009','Rahul Mehta','rahul@gmail.com','pass123','1994-02-20','male','Surat','Gujarat','395001','passenger'),
+('U010','Pooja Nair','pooja@gmail.com','pass123','1999-06-17','female','Kochi','Kerala','682001','passenger');
+
+INSERT INTO user_mobile VALUES
+('U001','9876543210'),
+('U002','8765432109'),
+('U003','7654321098'),
+('U004','6543210987'),
+('U005','9123456780'),
+('U006','9988776655'),
+('U007','9090909090'),
+('U008','9000000001'),
+('U009','9111111111'),
+('U010','9222222222');
+
+
+INSERT INTO station VALUES
+('ST01','Mumbai Central','Mumbai','Maharashtra'),
+('ST02','Delhi Junction','Delhi','Delhi'),
+('ST03','Chennai Central','Chennai','Tamil Nadu'),
+('ST04','Bengaluru City','Bengaluru','Karnataka'),
+('ST05','Pune Junction','Pune','Maharashtra'),
+('ST06','Hyderabad Deccan','Hyderabad','Telangana'),
+('ST07','Jaipur Junction','Jaipur','Rajasthan'),
+('ST08','Surat Station','Surat','Gujarat'),
+('ST09','Kochi Station','Kochi','Kerala'),
+('ST10','Nagpur Junction','Nagpur','Maharashtra');
+
+REPLACE INTO route VALUES
+ ('R001','Mumbai-Delhi'),
+ ('R002','Chennai-Bengaluru'),
+ ('R003','Hyderabad-Pune'),
+ ('R004','Jaipur-Surat'),
+ ('R005','Kochi-Chennai');
+
+
+INSERT INTO route_station VALUES
+ ('R001','ST01',1,'06:00:00','06:15:00'),
+ ('R001','ST10',2,'10:00:00','10:10:00'),
+ ('R001','ST02',3,'18:00:00',NULL),
+
+ ('R002','ST03',1,'07:00:00','07:10:00'),
+ ('R002','ST04',2,'12:00:00',NULL),
+
+ ('R003','ST06',1,'08:00:00','08:20:00'),
+ ('R003','ST05',2,'14:00:00',NULL);
+
+INSERT INTO train VALUES
+('T001','Mumbai Deluxe','express',1.2,'R001'),
+('T002','Chennai Superfast','superfast',1.5,'R002'),
+('T003','Hyderabad Express','express',1.1,'R003'),
+('T004','Jaipur Mail','passenger',1.0,'R004'),
+('T005','Kochi Shatabdi','shatabdi',1.8,'R005');
+
+INSERT INTO schedule VALUES
+('S001','T001','06:00:00','18:00:00','Mon,Tue,Wed,Thu,Fri'),
+('S002','T002','07:00:00','12:00:00','Daily'),
+('S003','T003','08:00:00','14:00:00','Mon,Wed,Fri'),
+('S004','T004','06:30:00','16:00:00','Tue,Thu,Sat'),
+('S005','T005','09:00:00','17:00:00','Daily');
+
+
+INSERT INTO class VALUES
+('C001','Sleeper','sleeper',5,1.0,'T001'),
+('C002','AC 3 Tier','ac',3,1.5,'T001'),
+('C003','General','general',4,1.0,'T002'),
+('C004','AC Chair Car','ac',2,1.8,'T002'),
+('C005','Sleeper','sleeper',5,1.0,'T003');
+
+INSERT INTO berth VALUES
+('B001','C001',1,1,'available'),
+('B002','C001',1,2,'available'),
+('B003','C001',2,1,'available'),
+('B004','C002',1,1,'available'),
+('B005','C003',1,1,'available'),
+('B006','C004',1,1,'available'),
+('B007','C004',1,2,'available'),
+('B008','C005',1,1,'available'),
+('B009','C005',1,2,'available'),
+('B010','C005',2,1,'available');
+
+INSERT INTO seat_availability VALUES
+('T001','C001','2025-11-20',50),
+('T001','C002','2025-11-20',30),
+('T002','C003','2025-11-20',60),
+('T002','C004','2025-11-20',20),
+('T003','C005','2025-11-20',40),
+('T004','C003','2025-11-20',55),
+('T005','C004','2025-11-20',25),
+('T001','C001','2025-11-21',50),
+('T002','C004','2025-11-21',20),
+('T003','C005','2025-11-21',40);
+
+INSERT INTO ticket VALUES
+('PNR001','T001','U001','ST01','ST02','2025-11-20',NOW(),1200,'booked'),
+('PNR002','T001','U002','ST01','ST02','2025-11-20',NOW(),1200,'booked'),
+('PNR003','T002','U003','ST03','ST04','2025-11-20',NOW(),500,'booked'),
+('PNR004','T003','U004','ST06','ST05','2025-11-20',NOW(),600,'booked'),
+('PNR005','T005','U010','ST09','ST03','2025-11-20',NOW(),900,'booked');
+
+
+INSERT INTO passenger VALUES
+('P001','PNR001','Amit Sharma',29,'male','B001'),
+('P002','PNR002','Riya Verma',27,'female','B002'),
+('P003','PNR003','Karan Singh',34,'male','B004'),
+('P004','PNR004','Sneha Rao',25,'female','B008'),
+('P005','PNR005','Pooja Nair',26,'female','B009');
+
+INSERT INTO payment VALUES
+('TX001','PNR001','U001',1200,'upi','success',NOW()),
+('TX002','PNR002','U002',1200,'credit_card','success',NOW()),
+('TX003','PNR003','U003',500,'upi','success',NOW()),
+('TX004','PNR004','U004',600,'debit_card','success',NOW()),
+('TX005','PNR005','U010',900,'wallet','success',NOW());
+
+INSERT INTO cancellation VALUES
+('CN001','PNR003',NOW(),400,'Personal reasons');
+
+INSERT INTO train_status VALUES
+('T001','2025-11-20','ST10',10,'delayed'),
+('T002','2025-11-20','ST03',0,'on_time'),
+('T003','2025-11-20','ST06',15,'delayed');
+
+INSERT INTO connected VALUES
+('ST01','T001'),
+('ST02','T001'),
+('ST03','T002'),
+('ST04','T002'),
+('ST06','T003'),
+('ST05','T003'),
+('ST07','T004'),
+('ST08','T004'),
+('ST09','T005'),
+('ST03','T005');
+
+show tables;

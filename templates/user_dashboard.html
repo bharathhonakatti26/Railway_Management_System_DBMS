@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Welcome, {{ session.get('name') }}</h2>
+  <p>What would you like to do?</p>
+  <a class="btn" href="{{ url_for('search_trains') }}">Search & Book Trains</a>
+  <a class="btn secondary" href="{{ url_for('my_tickets') }}">View/Cancel Tickets</a>
+</div>
+{% endblock %}

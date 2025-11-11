@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Admin Dashboard</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Add Train</h3>
+      <p>Create a new train, schedule, and classes.</p>
+      <a class="btn" href="{{ url_for('admin_add_train') }}">Go</a>
+    </div>
+    <div class="card">
+      <h3>Manage Trains</h3>
+      <p>View all trains & schedules.</p>
+      <a class="btn" href="{{ url_for('admin_trains') }}">Open</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

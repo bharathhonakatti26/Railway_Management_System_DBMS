@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Edit Train</h2>
+  <form method="post">
+    <label>Train No</label><input name="train_no" value="{{ train.train_no }}" readonly style="background-color: #f0f0f0;">
+    <label>Train Name</label><input name="train_name" value="{{ train.train_name }}" required>
+    <label>Type</label>
+    <select name="type">
+      <option value="passenger" {% if train.type == 'passenger' %}selected{% endif %}>Passenger</option>
+      <option value="express" {% if train.type == 'express' %}selected{% endif %}>Express</option>
+      <option value="superfast" {% if train.type == 'superfast' %}selected{% endif %}>Superfast</option>
+      <option value="shatabdi" {% if train.type == 'shatabdi' %}selected{% endif %}>Shatabdi</option>
+      <option value="rajdhani" {% if train.type == 'rajdhani' %}selected{% endif %}>Rajdhani</option>
+      <option value="duronto" {% if train.type == 'duronto' %}selected{% endif %}>Duronto</option>
+      <option value="vande_bharat" {% if train.type == 'vande_bharat' %}selected{% endif %}>Vande Bharat</option>
+    </select>
+    <label>Base Fare Multiplier</label><input name="base_fare_multiplier" type="number" step="0.01" value="{{ train.base_fare_multiplier }}" required>
+    <label>Route ID</label><input name="route_id" value="{{ train.route_id }}" required>
+    <hr>
+    <h3>Schedule</h3>
+    {% if schedule %}
+    <label>Schedule ID</label><input name="schedule_id" value="{{ schedule.schedule_id }}" readonly style="background-color: #f0f0f0;">
+    {% else %}
+    <label>Schedule ID</label><input name="schedule_id" placeholder="e.g., S001" required>
+    {% endif %}
+    <label>Start Time</label><input name="start_time" type="time" value="{% if schedule %}{{ schedule.start_time.strftime('%H:%M') }}{% else %}10:00{% endif %}" required>
+    <label>End Time</label><input name="end_time" type="time" value="{% if schedule %}{{ schedule.end_time.strftime('%H:%M') }}{% else %}18:00{% endif %}" required>
+    <label>Running Days</label><input name="running_days" value="{% if schedule %}{{ schedule.running_days }}{% endif %}" placeholder="e.g., Mon,Wed,Fri">
+    <hr>
+    <h3>Class (optional)</h3>
+    {% if train_class %}
+    <label>Class ID</label><input name="class_id" value="{{ train_class.class_id }}" readonly style="background-color: #f0f0f0;">
+    {% else %}
+    <label>Class ID</label><input name="class_id" placeholder="e.g., C001">
+    {% endif %}
+    <label>Class Name</label><input name="class_name" value="{% if train_class %}{{ train_class.class_name }}{% endif %}" placeholder="e.g., AC First Class">
+    <label>Coach Type</label>
+    <select name="coach_type">
+      <option value="">--</option>
+      <option value="sleeper" {% if train_class and train_class.coach_type == 'sleeper' %}selected{% endif %}>Sleeper</option>
+      <option value="ac" {% if train_class and train_class.coach_type == 'ac' %}selected{% endif %}>AC</option>
+      <option value="general" {% if train_class and train_class.coach_type == 'general' %}selected{% endif %}>General</option>
+    </select>
+    <label>No. of Coaches</label><input name="no_of_coaches" type="number" value="{% if train_class %}{{ train_class.no_of_coaches }}{% endif %}" placeholder="e.g., 5">
+    <label>Class Multiplier</label><input name="c_multiplier" type="number" step="0.01" value="{% if train_class %}{{ train_class.c_multiplier }}{% endif %}" placeholder="e.g., 3.0">
+    <button class="btn" type="submit">Update Train</button>
+    <a href="{{ url_for('admin_trains') }}" class="btn secondary" style="margin-left: 10px;">Cancel</a>
+  </form>
+</div>
+{% endblock %}

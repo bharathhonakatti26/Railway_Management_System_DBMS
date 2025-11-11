@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Search Trains</h2>
+  <form method="get">
+    <label>Source Station ID</label>
+    <input name="source" value="{{ request.args.get('source','') }}" placeholder="e.g., ST01">
+    <label>Destination Station ID</label>
+    <input name="destination" value="{{ request.args.get('destination','') }}" placeholder="e.g., ST02">
+    <label>Travel Date</label>
+    <input type="date" name="date" value="{{ request.args.get('date','') }}">
+    <button class="btn" type="submit">Find</button>
+  </form>
+</div>
+
+{% if trains is not none %}
+<div class="card">
+  <h3>Available Trains</h3>
+  {% if trains %}
+    <table>
+      <tr>
+        <th>Train No</th>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Departs</th>
+        <th>Arrives</th>
+        <th></th>
+      </tr>
+      {% for row in trains %}
+      <tr>
+        <td>{{ row['train_no'] }}</td>
+        <td>{{ row['train_name'] }}</td>
+        <td>{{ row['type'] }}</td>
+        <td>{{ row['source_departure'] }}</td>
+        <td>{{ row['destination_arrival'] }}</td>
+        <td><a class="btn" href="{{ url_for('train_detail', train_no=row['train_no'], source=request.args.get('source'), destination=request.args.get('destination'), date=request.args.get('date')) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No trains found for your query.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

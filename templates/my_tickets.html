@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>My Tickets</h2>
+  {% if tickets %}
+  <table>
+    <tr>
+      <th>PNR</th><th>Train</th><th>From</th><th>To</th><th>Date</th><th>Total Fare</th><th>Status</th><th></th>
+    </tr>
+    {% for t in tickets %}
+    <tr>
+      <td><strong>{{ t.pnr_no }}</strong></td>
+      <td>{{ t.train_no }} — {{ t.train_name }}</td>
+      <td>{{ t.source_station }}</td>
+      <td>{{ t.destination_station }}</td>
+      <td>{{ t.travel_date }}</td>
+      <td>{{ t.total_fare }}</td>
+      <td>{{ t.status }}</td>
+      <td>
+        {% if t.status == 'booked' %}
+        <form method="post" action="{{ url_for('cancel_ticket') }}">
+          <input type="hidden" name="pnr_no" value="{{ t.pnr_no }}">
+          <input name="reason" placeholder="Reason">
+          <button class="btn warn" type="submit">Cancel</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p>No tickets.</p>
+  {% endif %}
+</div>
+{% endblock %}

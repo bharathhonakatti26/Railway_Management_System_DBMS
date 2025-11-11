@@ -1,0 +1,20 @@
+/* Basic CSS2-ish styling for a clean, minimal UI */
+body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; background: #f6f7fb; }
+header { background: #1f4f7b; color: #fff; padding: 12px 20px; }
+nav a { color: #fff; margin-right: 14px; text-decoration: none; }
+.container { width: 92%; max-width: 1100px; margin: 20px auto; }
+.card { background: #fff; border: 1px solid #e3e3e3; border-radius: 8px; padding: 16px; margin-bottom: 18px; }
+.btn { display: inline-block; padding: 8px 14px; border: 1px solid #1f4f7b; background: #1f4f7b; color: #fff; text-decoration: none; border-radius: 6px; cursor: pointer; }
+.btn.secondary { background: #fff; color: #1f4f7b; }
+.btn.warn { background: #a53b2a; border-color: #a53b2a; }
+input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; width: 100%; max-width: 420px; }
+label { display: block; margin: 10px 0 6px; }
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+th { background: #f0f3f8; }
+.flash { padding: 10px 12px; border-radius: 6px; margin-bottom: 14px; }
+.flash.success { background: #e3f7e7; border: 1px solid #9ad2a0; color: #215c2f; }
+.flash.error { background: #fdecea; border: 1px solid #f5a29d; color: #7a1d16; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+footer { text-align: center; color: #555; padding: 20px; }
+small.mono { font-family: "Courier New", monospace; color: #555; }

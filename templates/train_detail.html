@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Train {{ train.train_no }} — {{ train.train_name }}</h2>
+  <p>Route: {{ train.route_id }} | Type: {{ train.type }}</p>
+  <p>Travel: {{ source }} → {{ destination }} on {{ date }}</p>
+</div>
+
+<div class="card">
+  <h3>Classes & Availability</h3>
+  <table>
+    <tr>
+      <th>Class ID</th><th>Name</th><th>Coach Type</th><th>Seats Available</th><th></th>
+    </tr>
+    {% for c in classes %}
+    <tr>
+      <td>{{ c.class_id }}</td>
+      <td>{{ c.class_name }}</td>
+      <td>{{ c.coach_type }}</td>
+      <td>{{ c.available }}</td>
+      <td>
+        <details>
+          <summary>Book</summary>
+          <form method="post" action="{{ url_for('book_train', train_no=train.train_no) }}">
+            <input type="hidden" name="date" value="{{ date }}">
+            <input type="hidden" name="source" value="{{ source }}">
+            <input type="hidden" name="destination" value="{{ destination }}">
+            <input type="hidden" name="class_id" value="{{ c.class_id }}">
+            <label>Passenger Name</label>
+            <input name="passenger_name" required>
+            <label>Age</label>
+            <input name="age" type="number" required>
+            <label>Gender</label>
+            <select name="gender">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+            <label>Berth Preference (berth_id like B001)</label>
+            <input name="berth_pref" placeholder="Optional">
+            <button class="btn" type="submit">Confirm Booking</button>
+          </form>
+        </details>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

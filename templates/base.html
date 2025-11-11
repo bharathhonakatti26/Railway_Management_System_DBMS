@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title or "Railway System" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<header>
+  <nav>
+    <a href="{{ url_for('home') }}">Home</a>
+    {% if session.get('role') == 'admin' %}
+      <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+      <a href="{{ url_for('admin_add_train') }}">Add Train</a>
+      <a href="{{ url_for('admin_trains') }}">Manage Trains</a>
+    {% elif session.get('role') == 'passenger' %}
+      <a href="{{ url_for('user_dashboard') }}">User Dashboard</a>
+      <a href="{{ url_for('search_trains') }}">Search Trains</a>
+      <a href="{{ url_for('my_tickets') }}">My Tickets</a>
+    {% endif %}
+    {% if session.get('user_id') %}
+      <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+  </nav>
+</header>
+<div class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+<footer>
+  <p>Railway Reservation Demo • <small class="mono">Flask + MySQL</small></p>
+</footer>
+</body>
+</html>
