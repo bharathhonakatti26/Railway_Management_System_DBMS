@@ -103,17 +103,27 @@ def register():
     if request.method == "POST":
         f = request.form
         try:
+            # Auto-generate user ID
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("SELECT MAX(CAST(SUBSTRING(user_id, 2) AS UNSIGNED)) as max_id FROM user WHERE user_id LIKE 'U%'")
+            result = cur.fetchone()
+            max_id = result[0] if result and result[0] else 0
+            user_id = f"U{str(max_id + 1).zfill(3)}"
+            cur.close()
+            conn.close()
+            
             execute(
                 "INSERT INTO user (user_id, name, email, password, dob, gender, city, state, pin_code, role) "
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'passenger')",
                 (
-                    f.get("user_id"), f.get("name"), f.get("email"), f.get("password"),
+                    user_id, f.get("name"), f.get("email"), f.get("password"),
                     f.get("dob") or None, f.get("gender") or None,
                     f.get("city"), f.get("state"), f.get("pin_code")
                 )
             )
             if f.get("mobile"):
-                execute("INSERT INTO user_mobile (user_id, mobile_no) VALUES (%s,%s)", (f.get("user_id"), f.get("mobile")))
+                execute("INSERT INTO user_mobile (user_id, mobile_no) VALUES (%s,%s)", (user_id, f.get("mobile")))
             flash("Account created. Please login.", "success")
             return redirect(url_for("login"))
         except mysql.connector.Error as e:
@@ -224,37 +234,62 @@ def book_train(train_no):
     passenger_name = request.form.get("passenger_name")
     age = request.form.get("age")
     gender = request.form.get("gender")
-    berth_pref = request.form.get("berth_pref") or None
+    num_passengers = int(request.form.get("num_passengers", 1))
 
     # Generate PNR like PNRxxx
     pnr = "PNR" + uuid.uuid4().hex[:6].upper()
 
-    # Call stored procedure book_ticket with OUT param via workaround (use IN OUT through SELECT)
-    # Our procedure signature ends with OUT p_result; we need to read it. We'll call using cursor.callproc.
     conn = get_db()
     try:
-        cur = conn.cursor()
-        # Prepare OUT parameter as placeholder; mysql-connector requires supplying initial value
-        args = (pnr, train_no, user_id, source, destination, date, class_id, "")
-        cur.callproc("book_ticket", args)
-        # Fetch OUT value from cur.stored_results() or parameters
-        result_msg = None
-        for res in cur.stored_results():
-            # not used here; procedure doesn't SELECT
-            pass
-        # After callproc, connector updates args in cur (not directly accessible), so we refetch ticket existence
-        # Check if ticket was created
+        # Check seat availability first
+        cur = conn.cursor(dictionary=True)
+        cur.execute("SELECT available_seats FROM seat_availability WHERE train_no=%s AND class_id=%s AND travel_date=%s",
+                   (train_no, class_id, date))
+        availability = cur.fetchone()
+        
+        if not availability or availability['available_seats'] < num_passengers:
+            flash(f"Not enough seats available. Only {availability['available_seats'] if availability else 0} seats left.", "error")
+            return redirect(url_for("train_detail", train_no=train_no, source=source, destination=destination, date=date))
+        
+        # Call stored procedure book_ticket
         cur2 = conn.cursor()
-        cur2.execute("SELECT pnr_no FROM ticket WHERE pnr_no=%s", (pnr,))
-        created = cur2.fetchone()
+        args = (pnr, train_no, user_id, source, destination, date, class_id, "")
+        cur2.callproc("book_ticket", args)
         cur2.close()
+        
+        # Check if ticket was created
+        cur3 = conn.cursor(dictionary=True)
+        cur3.execute("SELECT pnr_no, total_fare FROM ticket WHERE pnr_no=%s", (pnr,))
+        created = cur3.fetchone()
+        cur3.close()
+        
         if created:
-            # Insert passenger row
-            passenger_id = "P" + uuid.uuid4().hex[:6].upper()
-            cur.execute("INSERT INTO passenger (passenger_id, pnr_no, passenger_name, age, gender, berth_pref) VALUES (%s,%s,%s,%s,%s,%s)",
-                        (passenger_id, pnr, passenger_name, age, gender, berth_pref))
+            # Get available berths for auto-assignment
+            cur4 = conn.cursor(dictionary=True)
+            cur4.execute("SELECT berth_id FROM berth WHERE class_id=%s AND status='available' LIMIT %s",
+                        (class_id, num_passengers))
+            available_berths = cur4.fetchall()
+            cur4.close()
+            
+            # Insert passenger rows (all with same name, age, gender)
+            for i in range(num_passengers):
+                passenger_id = "P" + uuid.uuid4().hex[:6].upper()
+                berth_id = available_berths[i]['berth_id'] if i < len(available_berths) else None
+                
+                cur5 = conn.cursor()
+                cur5.execute("INSERT INTO passenger (passenger_id, pnr_no, passenger_name, age, gender, berth_pref) VALUES (%s,%s,%s,%s,%s,%s)",
+                           (passenger_id, pnr, passenger_name, age, gender, berth_id))
+                cur5.close()
+            
+            # Manually update seat availability (since trigger might not work correctly)
+            cur6 = conn.cursor()
+            cur6.execute("UPDATE seat_availability SET available_seats = available_seats - %s WHERE train_no=%s AND class_id=%s AND travel_date=%s",
+                        (num_passengers, train_no, class_id, date))
+            cur6.close()
+            
             conn.commit()
-            flash(f"Ticket booked! PNR: {pnr}", "success")
+            # Redirect to payment page instead of my_tickets
+            return redirect(url_for("payment_page", pnr=pnr))
         else:
             flash("Booking failed (possibly no seats).", "error")
     except mysql.connector.Error as e:
@@ -263,7 +298,7 @@ def book_train(train_no):
     finally:
         cur.close()
         conn.close()
-    return redirect(url_for("my_tickets"))
+    return redirect(url_for("search_trains"))
 
 @app.route("/tickets")
 @login_required(role="passenger")
@@ -271,9 +306,13 @@ def my_tickets():
     uid = session.get("user_id")
     rows = query("""
         SELECT t.pnr_no, t.train_no, tr.train_name, t.source_station, t.destination_station,
-               t.travel_date, t.total_fare, t.status
-        FROM ticket t JOIN train tr ON t.train_no=tr.train_no
-        WHERE t.user_id=%s ORDER BY t.booking_time DESC
+               t.travel_date, t.total_fare, t.status,
+               p.transaction_id, p.status as payment_status
+        FROM ticket t 
+        JOIN train tr ON t.train_no=tr.train_no
+        LEFT JOIN payment p ON t.pnr_no = p.pnr_no AND p.status = 'success'
+        WHERE t.user_id=%s 
+        ORDER BY t.booking_time DESC
     """, (uid,))
     return render_template("my_tickets.html", title="My Tickets", tickets=rows)
 
@@ -300,6 +339,107 @@ def cancel_ticket():
         conn.close()
     return redirect(url_for("my_tickets"))
 
+@app.route("/payment/<pnr>", methods=["GET", "POST"])
+@login_required(role="passenger")
+def payment_page(pnr):
+    user_id = session.get("user_id")
+    
+    # Get ticket details
+    ticket = query("""
+        SELECT t.pnr_no, t.train_no, tr.train_name, t.source_station, t.destination_station,
+               t.travel_date, t.total_fare, t.status
+        FROM ticket t JOIN train tr ON t.train_no=tr.train_no
+        WHERE t.pnr_no=%s AND t.user_id=%s
+    """, (pnr, user_id), fetch="one")
+    
+    if not ticket:
+        flash("Ticket not found.", "error")
+        return redirect(url_for("my_tickets"))
+    
+    # Check if already paid
+    existing_payment = query("SELECT * FROM payment WHERE pnr_no=%s AND status='success'", (pnr,), fetch="one")
+    if existing_payment:
+        flash("Payment already completed for this ticket.", "info")
+        return redirect(url_for("my_tickets"))
+    
+    if request.method == "POST":
+        payment_mode = request.form.get("payment_mode")
+        transaction_id = "TXN" + uuid.uuid4().hex[:7].upper()
+        
+        try:
+            execute("""
+                INSERT INTO payment (transaction_id, pnr_no, user_id, amount, mode, status, transaction_date)
+                VALUES (%s, %s, %s, %s, %s, 'success', NOW())
+            """, (transaction_id, pnr, user_id, ticket['total_fare'], payment_mode))
+            
+            flash(f"Payment successful! Transaction ID: {transaction_id}", "success")
+            return redirect(url_for("my_tickets"))
+        except mysql.connector.Error as e:
+            flash(f"Payment error: {e}", "error")
+    
+    return render_template("payment.html", title="Payment", ticket=ticket)
+
+@app.route("/payment-history")
+@login_required(role="passenger")
+def payment_history():
+    user_id = session.get("user_id")
+    
+    payments = query("""
+        SELECT p.transaction_id, p.pnr_no, p.amount, p.mode, p.status, p.transaction_date,
+               tr.train_name, t.source_station, t.destination_station, t.travel_date
+        FROM payment p
+        JOIN ticket t ON p.pnr_no = t.pnr_no
+        JOIN train tr ON t.train_no = tr.train_no
+        WHERE p.user_id=%s
+        ORDER BY p.transaction_date DESC
+    """, (user_id,))
+    
+    return render_template("payment_history.html", title="Payment History", payments=payments)
+
+@app.route("/train-status", methods=["GET"])
+@login_required(role="passenger")
+def train_status():
+    train_no = request.args.get("train_no")
+    status_info = None
+    train_info = None
+    route_stations = None
+    
+    # Get all trains for dropdown
+    trains = query("SELECT train_no, train_name FROM train ORDER BY train_no")
+    
+    if train_no:
+        # Get train information
+        train_info = query("SELECT * FROM train WHERE train_no=%s", (train_no,), fetch="one")
+        
+        if train_info:
+            # Get current status
+            status_info = query("""
+                SELECT ts.*, s.station_name, s.city
+                FROM train_status ts
+                JOIN station s ON ts.current_station = s.station_id
+                WHERE ts.train_no = %s
+                ORDER BY ts.status_date DESC
+                LIMIT 1
+            """, (train_no,), fetch="one")
+            
+            # Get route stations
+            route_stations = query("""
+                SELECT rs.stop_no, s.station_id, s.station_name, s.city,
+                       rs.arrival_time, rs.departure_time
+                FROM route_station rs
+                JOIN station s ON rs.station_id = s.station_id
+                WHERE rs.route_id = %s
+                ORDER BY rs.stop_no
+            """, (train_info['route_id'],))
+    
+    return render_template("train_status.html", 
+                         title="Train Status",
+                         trains=trains,
+                         selected_train=train_no,
+                         train_info=train_info,
+                         status_info=status_info,
+                         route_stations=route_stations)
+
 # --------------- Admin -------------------
 @app.route("/admin")
 @login_required(role="admin")
@@ -318,17 +458,27 @@ def admin_add_user():
     if request.method == "POST":
         f = request.form
         try:
+            # Auto-generate user ID
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("SELECT MAX(CAST(SUBSTRING(user_id, 2) AS UNSIGNED)) as max_id FROM user WHERE user_id LIKE 'U%'")
+            result = cur.fetchone()
+            max_id = result[0] if result and result[0] else 0
+            user_id = f"U{str(max_id + 1).zfill(3)}"
+            cur.close()
+            conn.close()
+            
             execute(
                 "INSERT INTO user (user_id, name, email, password, dob, gender, city, state, pin_code, role) "
                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
-                    f.get("user_id"), f.get("name"), f.get("email"), f.get("password"),
+                    user_id, f.get("name"), f.get("email"), f.get("password"),
                     f.get("dob") or None, f.get("gender") or None,
                     f.get("city"), f.get("state"), f.get("pin_code"), f.get("role", "passenger")
                 )
             )
             if f.get("mobile"):
-                execute("INSERT INTO user_mobile (user_id, mobile_no) VALUES (%s,%s)", (f.get("user_id"), f.get("mobile")))
+                execute("INSERT INTO user_mobile (user_id, mobile_no) VALUES (%s,%s)", (user_id, f.get("mobile")))
             flash("User created successfully.", "success")
             return redirect(url_for("admin_users"))
         except mysql.connector.Error as e:
@@ -357,19 +507,57 @@ def admin_add_train():
     if request.method == "POST":
         f = request.form
         try:
+            # Auto-generate train_no
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute("SELECT MAX(CAST(SUBSTRING(train_no, 2) AS UNSIGNED)) as max_id FROM train WHERE train_no LIKE 'T%'")
+            result = cur.fetchone()
+            max_id = result[0] if result and result[0] else 0
+            train_no = f"T{str(max_id + 1).zfill(3)}"
+            
+            # Auto-generate schedule_id
+            cur.execute("SELECT MAX(CAST(SUBSTRING(schedule_id, 4) AS UNSIGNED)) as max_id FROM schedule WHERE schedule_id LIKE 'SCH%'")
+            result = cur.fetchone()
+            max_sch_id = result[0] if result and result[0] else 0
+            schedule_id = f"SCH{str(max_sch_id + 1).zfill(3)}"
+            cur.close()
+            conn.close()
+            
             execute("INSERT INTO train (train_no, train_name, type, base_fare_multiplier, route_id) VALUES (%s,%s,%s,%s,%s)",
-                    (f["train_no"], f["train_name"], f["type"], f["base_fare_multiplier"], f["route_id"]))
+                    (train_no, f["train_name"], f["type"], f["base_fare_multiplier"], f["route_id"]))
             execute("INSERT INTO schedule (schedule_id, train_no, start_time, end_time, running_days) VALUES (%s,%s,%s,%s,%s)",
-                    (f["schedule_id"], f["train_no"], f["start_time"], f["end_time"], f.get("running_days")))
-            if f.get("class_id"):
-                execute("INSERT INTO class (class_id, class_name, coach_type, no_of_coaches, c_multiplier, train_no) VALUES (%s,%s,%s,%s,%s,%s)",
-                        (f["class_id"], f.get("class_name"), f.get("coach_type") or None,
-                         f.get("no_of_coaches") or 1, f.get("c_multiplier") or 1.0, f["train_no"]))
-            flash("Train created.", "success")
+                    (schedule_id, train_no, f["start_time"], f["end_time"], f.get("running_days")))
+            
+            # Handle multiple classes
+            class_names = f.getlist("class_name[]")
+            coach_types = f.getlist("coach_type[]")
+            no_of_coaches_list = f.getlist("no_of_coaches[]")
+            c_multipliers = f.getlist("c_multiplier[]")
+            
+            for i in range(len(class_names)):
+                if class_names[i]:  # Only add if class name is provided
+                    # Auto-generate class_id
+                    conn = get_db()
+                    cur = conn.cursor()
+                    cur.execute("SELECT MAX(CAST(SUBSTRING(class_id, 2) AS UNSIGNED)) as max_id FROM class WHERE class_id LIKE 'C%'")
+                    result = cur.fetchone()
+                    max_class_id = result[0] if result and result[0] else 0
+                    class_id = f"C{str(max_class_id + 1).zfill(3)}"
+                    cur.close()
+                    conn.close()
+                    
+                    execute("INSERT INTO class (class_id, class_name, coach_type, no_of_coaches, c_multiplier, train_no) VALUES (%s,%s,%s,%s,%s,%s)",
+                            (class_id, class_names[i], coach_types[i] or None,
+                             no_of_coaches_list[i] or 1, c_multipliers[i] or 1.0, train_no))
+            
+            flash(f"Train {train_no} created successfully.", "success")
             return redirect(url_for("admin_trains"))
         except mysql.connector.Error as e:
             flash(f"Error adding train: {e}", "error")
-    return render_template("admin_add_train.html", title="Add Train")
+    
+    # GET request - fetch routes for dropdown
+    routes = query("SELECT route_id, route_name FROM route ORDER BY route_id")
+    return render_template("admin_add_train.html", title="Add Train", routes=routes)
 
 @app.route("/admin/edit-train/<train_no>", methods=["GET", "POST"])
 @login_required(role="admin")

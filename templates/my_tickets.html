@@ -5,31 +5,59 @@
   {% if tickets %}
   <table>
     <tr>
-      <th>PNR</th><th>Train</th><th>From</th><th>To</th><th>Date</th><th>Total Fare</th><th>Status</th><th></th>
+      <th>PNR</th><th>Train</th><th>From</th><th>To</th><th>Date</th><th>Total Fare</th><th>Ticket Status</th><th>Payment Status</th><th>Actions</th>
     </tr>
     {% for t in tickets %}
     <tr>
       <td><strong>{{ t.pnr_no }}</strong></td>
-      <td>{{ t.train_no }} — {{ t.train_name }}</td>
+      <td>{{ t.train_no }} — {{ t.train_name }}
+        <br><a href="{{ url_for('train_status', train_no=t.train_no) }}" style="font-size: 0.85em; color: #007bff;">📍 Check Status</a>
+      </td>
       <td>{{ t.source_station }}</td>
       <td>{{ t.destination_station }}</td>
       <td>{{ t.travel_date }}</td>
-      <td>{{ t.total_fare }}</td>
-      <td>{{ t.status }}</td>
+      <td style="font-weight: bold;">₹{{ "%.2f"|format(t.total_fare) }}</td>
       <td>
         {% if t.status == 'booked' %}
-        <form method="post" action="{{ url_for('cancel_ticket') }}">
-          <input type="hidden" name="pnr_no" value="{{ t.pnr_no }}">
-          <input name="reason" placeholder="Reason">
-          <button class="btn warn" type="submit">Cancel</button>
-        </form>
+        <span style="color: #28a745;">✓ Booked</span>
+        {% elif t.status == 'cancelled' %}
+        <span style="color: #dc3545;">✗ Cancelled</span>
+        {% elif t.status == 'waiting' %}
+        <span style="color: #ffc107;">⏳ Waiting</span>
+        {% else %}
+        {{ t.status }}
+        {% endif %}
+      </td>
+      <td>
+        {% if t.payment_status == 'success' %}
+        <span style="color: #28a745; font-weight: bold;">✓ Paid</span>
+        {% else %}
+        <span style="color: #dc3545; font-weight: bold;">✗ Unpaid</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if t.status == 'booked' %}
+          {% if not t.payment_status %}
+          <a href="{{ url_for('payment_page', pnr=t.pnr_no) }}" class="btn" style="background: #28a745; padding: 5px 10px; font-size: 0.9em;">Pay Now</a>
+          {% endif %}
+          <details style="margin-top: 5px;">
+            <summary style="cursor: pointer; color: #dc3545;">Cancel</summary>
+            <form method="post" action="{{ url_for('cancel_ticket') }}" style="margin-top: 5px;">
+              <input type="hidden" name="pnr_no" value="{{ t.pnr_no }}">
+              <input name="reason" placeholder="Reason" style="width: 150px; padding: 3px;">
+              <button class="btn warn" type="submit" style="padding: 5px 10px; font-size: 0.9em;">Confirm Cancel</button>
+            </form>
+          </details>
         {% endif %}
       </td>
     </tr>
     {% endfor %}
   </table>
   {% else %}
-    <p>No tickets.</p>
+    <p style="text-align: center; padding: 30px; color: #666;">No tickets found.</p>
+    <p style="text-align: center;">
+      <a href="{{ url_for('search_trains') }}" class="btn">Book a Ticket</a>
+    </p>
   {% endif %}
 </div>
 {% endblock %}

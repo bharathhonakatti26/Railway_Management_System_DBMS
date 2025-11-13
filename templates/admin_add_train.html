@@ -1,37 +1,186 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-  <h2>Add Train</h2>
+  <h2>Add New Train</h2>
   <form method="post">
-    <label>Train No</label><input name="train_no" placeholder="e.g., 12345" required>
-    <label>Train Name</label><input name="train_name" placeholder="e.g., Rajdhani Express" required>
-    <label>Type</label>
-    <select name="type">
-      <option value="rajdhani">Rajdhani (Example)</option>
-      <option>passenger</option><option>express</option><option>superfast</option>
-      <option>shatabdi</option><option>duronto</option><option>vande_bharat</option>
-    </select>
-    <label>Base Fare Multiplier</label><input name="base_fare_multiplier" type="number" step="0.01" value="2.5" placeholder="e.g., 2.5" required>
-    <label>Route ID</label><input name="route_id" placeholder="e.g., R001 (Existing route id)" required>
-    <hr>
-    <h3>Schedule</h3>
-    <label>Schedule ID</label><input name="schedule_id" placeholder="e.g., S001" required>
-    <label>Start Time</label><input name="start_time" type="time" value="10:00" required>
-    <label>End Time</label><input name="end_time" type="time" value="18:00" required>
-    <label>Running Days</label><input name="running_days" placeholder="e.g., Mon,Wed,Fri">
-    <hr>
-    <h3>Class (optional, you can add one for now)</h3>
-    <label>Class ID</label><input name="class_id" placeholder="e.g., C001">
-    <label>Class Name</label><input name="class_name" placeholder="e.g., AC First Class">
-    <label>Coach Type</label>
-    <select name="coach_type">
-      <option value="">--</option>
-      <option value="ac">AC (Example)</option>
-      <option>sleeper</option><option>general</option>
-    </select>
-    <label>No. of Coaches</label><input name="no_of_coaches" type="number" placeholder="e.g., 5">
-    <label>Class Multiplier</label><input name="c_multiplier" type="number" step="0.01" placeholder="e.g., 3.0">
-    <button class="btn" type="submit">Create</button>
+    
+    <!-- Train Information Section -->
+    <fieldset style="border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 5px;">
+      <legend style="font-weight: bold; color: #007bff;">🚂 Train Information</legend>
+      
+      <label>Train Name <span style="color: red;">*</span></label>
+      <input name="train_name" placeholder="e.g., Rajdhani Express" required>
+      
+      <label>Train Type <span style="color: red;">*</span></label>
+      <select name="type" required>
+        <option value="">-- Select Train Type --</option>
+        <option value="passenger">Passenger</option>
+        <option value="express">Express</option>
+        <option value="superfast">Superfast</option>
+        <option value="shatabdi">Shatabdi</option>
+        <option value="rajdhani">Rajdhani</option>
+        <option value="duronto">Duronto</option>
+        <option value="vande_bharat">Vande Bharat</option>
+      </select>
+      
+      <label>Base Fare Multiplier <span style="color: red;">*</span></label>
+      <input name="base_fare_multiplier" type="number" step="0.01" min="0.5" max="5.0" value="1.0" required>
+      <small style="color: #666;">Multiplier for calculating base fare (0.5 - 5.0)</small>
+      
+      <label>Route <span style="color: red;">*</span></label>
+      <select name="route_id" required>
+        <option value="">-- Select Route --</option>
+        {% for route in routes %}
+        <option value="{{ route.route_id }}">{{ route.route_id }} - {{ route.route_name }}</option>
+        {% endfor %}
+      </select>
+    </fieldset>
+    
+    <!-- Schedule Section -->
+    <fieldset style="border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 5px;">
+      <legend style="font-weight: bold; color: #28a745;">📅 Schedule</legend>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div>
+          <label>Start Time <span style="color: red;">*</span></label>
+          <input name="start_time" type="time" value="08:00" required>
+        </div>
+        <div>
+          <label>End Time <span style="color: red;">*</span></label>
+          <input name="end_time" type="time" value="18:00" required>
+        </div>
+      </div>
+      
+      <label>Running Days</label>
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="day" value="Mon" checked>
+            <span style="margin-left: 5px;">Monday</span>
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="day" value="Tue" checked>
+            <span style="margin-left: 5px;">Tuesday</span>
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="day" value="Wed" checked>
+            <span style="margin-left: 5px;">Wednesday</span>
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="day" value="Thu" checked>
+            <span style="margin-left: 5px;">Thursday</span>
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="day" value="Fri" checked>
+            <span style="margin-left: 5px;">Friday</span>
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="day" value="Sat" checked>
+            <span style="margin-left: 5px;">Saturday</span>
+          </label>
+          <label style="display: flex; align-items: center; cursor: pointer;">
+            <input type="checkbox" name="day" value="Sun" checked>
+            <span style="margin-left: 5px;">Sunday</span>
+          </label>
+        </div>
+      </div>
+      <input type="hidden" name="running_days" id="running_days">
+    </fieldset>
+    
+    <!-- Classes Section -->
+    <fieldset style="border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 5px;">
+      <legend style="font-weight: bold; color: #ffc107;">🎫 Classes</legend>
+      <p style="color: #666; margin-bottom: 15px;">Add one or more classes for this train</p>
+      
+      <div id="classesContainer">
+        <div class="class-entry" style="background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #007bff;">
+          <h4 style="margin-top: 0;">Class 1</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+              <label>Class Name</label>
+              <input name="class_name[]" placeholder="e.g., AC First Class">
+            </div>
+            <div>
+              <label>Coach Type</label>
+              <select name="coach_type[]">
+                <option value="">-- Select Coach Type --</option>
+                <option value="ac">AC</option>
+                <option value="sleeper">Sleeper</option>
+                <option value="general">General</option>
+              </select>
+            </div>
+            <div>
+              <label>Number of Coaches</label>
+              <input name="no_of_coaches[]" type="number" min="1" max="30" placeholder="e.g., 5">
+            </div>
+            <div>
+              <label>Class Multiplier</label>
+              <input name="c_multiplier[]" type="number" step="0.01" min="0.5" max="5.0" placeholder="e.g., 1.5">
+              <small style="color: #666; display: block;">Fare multiplier for this class</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <button type="button" onclick="addClassEntry()" class="btn secondary" style="margin-top: 10px;">
+        + Add Another Class
+      </button>
+    </fieldset>
+    
+    <div style="margin-top: 20px;">
+      <button class="btn" type="submit" style="padding: 12px 30px; font-size: 1.1em;">Create Train</button>
+      <a href="{{ url_for('admin_trains') }}" class="btn secondary" style="margin-left: 10px;">Cancel</a>
+    </div>
   </form>
 </div>
+
+<script>
+let classCount = 1;
+
+function addClassEntry() {
+  classCount++;
+  const container = document.getElementById('classesContainer');
+  const newEntry = document.createElement('div');
+  newEntry.className = 'class-entry';
+  newEntry.style.cssText = 'background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #28a745;';
+  newEntry.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h4 style="margin-top: 0;">Class ${classCount}</h4>
+      <button type="button" onclick="this.parentElement.parentElement.remove()" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Remove</button>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+      <div>
+        <label>Class Name</label>
+        <input name="class_name[]" placeholder="e.g., AC Second Class">
+      </div>
+      <div>
+        <label>Coach Type</label>
+        <select name="coach_type[]">
+          <option value="">-- Select Coach Type --</option>
+          <option value="ac">AC</option>
+          <option value="sleeper">Sleeper</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+      <div>
+        <label>Number of Coaches</label>
+        <input name="no_of_coaches[]" type="number" min="1" max="30" placeholder="e.g., 5">
+      </div>
+      <div>
+        <label>Class Multiplier</label>
+        <input name="c_multiplier[]" type="number" step="0.01" min="0.5" max="5.0" placeholder="e.g., 1.5">
+        <small style="color: #666; display: block;">Fare multiplier for this class</small>
+      </div>
+    </div>
+  `;
+  container.appendChild(newEntry);
+}
+
+// Update running_days hidden field before form submission
+document.querySelector('form').addEventListener('submit', function(e) {
+  const checkboxes = document.querySelectorAll('input[name="day"]:checked');
+  const days = Array.from(checkboxes).map(cb => cb.value).join(',');
+  document.getElementById('running_days').value = days;
+});
+</script>
 {% endblock %}

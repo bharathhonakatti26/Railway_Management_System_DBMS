@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>🚂 Check Train Status</h2>
+  
+  <form method="get" style="margin-bottom: 20px;">
+    <label>Select Train</label>
+    <select name="train_no" required onchange="this.form.submit()">
+      <option value="">-- Select a Train --</option>
+      {% for train in trains %}
+      <option value="{{ train.train_no }}" {% if selected_train == train.train_no %}selected{% endif %}>
+        {{ train.train_no }} - {{ train.train_name }}
+      </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if train_info %}
+<div class="card">
+  <h3>Train Information</h3>
+  <div style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+    <table style="width: 100%;">
+      <tr>
+        <td style="width: 30%;"><strong>Train Number:</strong></td>
+        <td>{{ train_info.train_no }}</td>
+      </tr>
+      <tr>
+        <td><strong>Train Name:</strong></td>
+        <td>{{ train_info.train_name }}</td>
+      </tr>
+      <tr>
+        <td><strong>Type:</strong></td>
+        <td style="text-transform: capitalize;">{{ train_info.type.replace('_', ' ') }}</td>
+      </tr>
+      <tr>
+        <td><strong>Route ID:</strong></td>
+        <td>{{ train_info.route_id }}</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+{% if status_info %}
+<div class="card">
+  <h3>Current Status</h3>
+  <div style="background: {% if status_info.status == 'on_time' %}#d4edda{% elif status_info.status == 'delayed' %}#fff3cd{% else %}#f8d7da{% endif %}; padding: 20px; border-radius: 5px; border-left: 5px solid {% if status_info.status == 'on_time' %}#28a745{% elif status_info.status == 'delayed' %}#ffc107{% else %}#dc3545{% endif %};">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 200px; margin: 10px;">
+        <p style="margin: 0; font-size: 0.9em; color: #666;">Current Station</p>
+        <p style="margin: 5px 0; font-size: 1.3em; font-weight: bold;">
+          {{ status_info.station_name }}
+          {% if status_info.city %}({{ status_info.city }}){% endif %}
+        </p>
+      </div>
+      
+      <div style="flex: 1; min-width: 200px; margin: 10px;">
+        <p style="margin: 0; font-size: 0.9em; color: #666;">Status</p>
+        <p style="margin: 5px 0; font-size: 1.3em; font-weight: bold; text-transform: uppercase;">
+          {% if status_info.status == 'on_time' %}
+            ✓ ON TIME
+          {% elif status_info.status == 'delayed' %}
+            ⏰ DELAYED
+          {% elif status_info.status == 'cancelled' %}
+            ✗ CANCELLED
+          {% else %}
+            {{ status_info.status }}
+          {% endif %}
+        </p>
+      </div>
+      
+      <div style="flex: 1; min-width: 200px; margin: 10px;">
+        <p style="margin: 0; font-size: 0.9em; color: #666;">Delay</p>
+        <p style="margin: 5px 0; font-size: 1.3em; font-weight: bold;">
+          {% if status_info.delay_minutes > 0 %}
+            {{ status_info.delay_minutes }} minutes
+          {% else %}
+            No Delay
+          {% endif %}
+        </p>
+      </div>
+      
+      <div style="flex: 1; min-width: 200px; margin: 10px;">
+        <p style="margin: 0; font-size: 0.9em; color: #666;">Status Date</p>
+        <p style="margin: 5px 0; font-size: 1.1em; font-weight: bold;">
+          {{ status_info.status_date.strftime('%Y-%m-%d') if status_info.status_date else 'N/A' }}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="card" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+  <p style="margin: 0;"><strong>Note:</strong> No current status information available for this train.</p>
+</div>
+{% endif %}
+
+{% if route_stations %}
+<div class="card">
+  <h3>Route & Schedule</h3>
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Stop No.</th>
+          <th>Station</th>
+          <th>City</th>
+          <th>Arrival Time</th>
+          <th>Departure Time</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for station in route_stations %}
+        <tr {% if status_info and station.station_id == status_info.current_station %}style="background: #d4edda; font-weight: bold;"{% endif %}>
+          <td style="text-align: center;">{{ station.stop_no }}</td>
+          <td>
+            <strong>{{ station.station_name }}</strong>
+            {% if status_info and station.station_id == status_info.current_station %}
+              <span style="color: #28a745; margin-left: 10px;">📍 Current Location</span>
+            {% endif %}
+          </td>
+          <td>{{ station.city if station.city else '-' }}</td>
+          <td style="text-align: center;">
+            {% if station.arrival_time %}
+              {{ station.arrival_time }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td style="text-align: center;">
+            {% if station.departure_time %}
+              {{ station.departure_time }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td style="text-align: center;">
+            {% if status_info and station.station_id == status_info.current_station %}
+              <span style="color: #28a745; font-weight: bold;">● At Station</span>
+            {% elif status_info and station.stop_no < (route_stations|selectattr('station_id', 'equalto', status_info.current_station)|map(attribute='stop_no')|first or 0) %}
+              <span style="color: #6c757d;">✓ Completed</span>
+            {% else %}
+              <span style="color: #007bff;">○ Upcoming</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+<div class="card">
+  <p style="text-align: center;">
+    <a href="{{ url_for('user_dashboard') }}" class="btn secondary">Back to Dashboard</a>
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Complete Payment</h2>
+  <p style="color: #28a745; font-weight: bold;">Booking Confirmed! Please complete the payment.</p>
+  
+  <div style="background: #f8f9fa; padding: 15px; margin: 15px 0; border-radius: 5px;">
+    <h3>Ticket Details</h3>
+    <table style="width: 100%;">
+      <tr>
+        <td><strong>PNR:</strong></td>
+        <td>{{ ticket.pnr_no }}</td>
+      </tr>
+      <tr>
+        <td><strong>Train:</strong></td>
+        <td>{{ ticket.train_no }} - {{ ticket.train_name }}</td>
+      </tr>
+      <tr>
+        <td><strong>From:</strong></td>
+        <td>{{ ticket.source_station }}</td>
+      </tr>
+      <tr>
+        <td><strong>To:</strong></td>
+        <td>{{ ticket.destination_station }}</td>
+      </tr>
+      <tr>
+        <td><strong>Travel Date:</strong></td>
+        <td>{{ ticket.travel_date }}</td>
+      </tr>
+      <tr>
+        <td><strong>Total Fare:</strong></td>
+        <td style="font-size: 1.2em; color: #007bff; font-weight: bold;">₹{{ "%.2f"|format(ticket.total_fare) }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <form method="post" style="margin-top: 20px;">
+    <h3>Payment Method</h3>
+    
+    <div style="margin: 15px 0;">
+      <label style="display: block; margin: 10px 0;">
+        <input type="radio" name="payment_mode" value="credit_card" checked required>
+        <span style="margin-left: 10px;">💳 Credit Card</span>
+      </label>
+      
+      <label style="display: block; margin: 10px 0;">
+        <input type="radio" name="payment_mode" value="debit_card" required>
+        <span style="margin-left: 10px;">💳 Debit Card</span>
+      </label>
+      
+      <label style="display: block; margin: 10px 0;">
+        <input type="radio" name="payment_mode" value="upi" required>
+        <span style="margin-left: 10px;">📱 UPI</span>
+      </label>
+      
+      <label style="display: block; margin: 10px 0;">
+        <input type="radio" name="payment_mode" value="net_banking" required>
+        <span style="margin-left: 10px;">🏦 Net Banking</span>
+      </label>
+      
+      <label style="display: block; margin: 10px 0;">
+        <input type="radio" name="payment_mode" value="wallet" required>
+        <span style="margin-left: 10px;">👛 Wallet</span>
+      </label>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <button class="btn" type="submit" style="background: #28a745; padding: 12px 30px; font-size: 1.1em;">
+        Pay ₹{{ "%.2f"|format(ticket.total_fare) }}
+      </button>
+      <a href="{{ url_for('my_tickets') }}" style="margin-left: 15px; color: #666;">Pay Later</a>
+    </div>
+  </form>
+</div>
+
+<div class="card" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+  <p style="margin: 0;"><strong>Note:</strong> This is a mock payment system for demonstration purposes. No real payment will be processed.</p>
+</div>
+{% endblock %}

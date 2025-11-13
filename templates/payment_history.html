@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Payment History</h2>
+  
+  {% if payments %}
+  <table>
+    <thead>
+      <tr>
+        <th>Transaction ID</th>
+        <th>PNR</th>
+        <th>Train</th>
+        <th>Route</th>
+        <th>Travel Date</th>
+        <th>Amount</th>
+        <th>Payment Mode</th>
+        <th>Status</th>
+        <th>Date & Time</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for payment in payments %}
+      <tr>
+        <td><strong>{{ payment.transaction_id }}</strong></td>
+        <td>{{ payment.pnr_no }}</td>
+        <td>{{ payment.train_name }}</td>
+        <td>{{ payment.source_station }} → {{ payment.destination_station }}</td>
+        <td>{{ payment.travel_date }}</td>
+        <td style="font-weight: bold; color: #007bff;">₹{{ "%.2f"|format(payment.amount) }}</td>
+        <td>
+          {% if payment.mode == 'credit_card' %}💳 Credit Card
+          {% elif payment.mode == 'debit_card' %}💳 Debit Card
+          {% elif payment.mode == 'upi' %}📱 UPI
+          {% elif payment.mode == 'net_banking' %}🏦 Net Banking
+          {% elif payment.mode == 'wallet' %}👛 Wallet
+          {% else %}{{ payment.mode }}
+          {% endif %}
+        </td>
+        <td>
+          {% if payment.status == 'success' %}
+          <span style="color: #28a745; font-weight: bold;">✓ Success</span>
+          {% elif payment.status == 'failed' %}
+          <span style="color: #dc3545; font-weight: bold;">✗ Failed</span>
+          {% elif payment.status == 'pending' %}
+          <span style="color: #ffc107; font-weight: bold;">⏳ Pending</span>
+          {% endif %}
+        </td>
+        <td>{{ payment.transaction_date.strftime('%Y-%m-%d %H:%M:%S') if payment.transaction_date else 'N/A' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+    <h3>Summary</h3>
+    <p><strong>Total Transactions:</strong> {{ payments|length }}</p>
+    <p><strong>Total Amount Paid:</strong> ₹{{ "%.2f"|format(payments|sum(attribute='amount')) }}</p>
+  </div>
+  {% else %}
+  <p style="text-align: center; padding: 30px; color: #666;">No payment history found.</p>
+  <p style="text-align: center;">
+    <a href="{{ url_for('search_trains') }}" class="btn">Book a Ticket</a>
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

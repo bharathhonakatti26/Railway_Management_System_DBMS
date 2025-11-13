@@ -42,6 +42,8 @@
             <input type="hidden" name="source" value="{{ source }}">
             <input type="hidden" name="destination" value="{{ destination }}">
             <input type="hidden" name="class_id" value="{{ c.class_id }}">
+            <label>Number of Passengers</label>
+            <input name="num_passengers" type="number" min="1" max="{{ c.available }}" value="1" required>
             <label>Passenger Name</label>
             <input name="passenger_name" required>
             <label>Age</label>
@@ -52,8 +54,6 @@
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
-            <label>Berth Preference (berth_id like B001)</label>
-            <input name="berth_pref" placeholder="Optional">
             <button class="btn" type="submit">Confirm Booking</button>
           </form>
         </details>
