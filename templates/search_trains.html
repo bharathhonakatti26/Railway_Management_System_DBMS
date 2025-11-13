@@ -3,12 +3,20 @@
 <div class="card">
   <h2>Search Trains</h2>
   <form method="get">
-    <label>Source Station ID</label>
-    <input name="source" value="{{ request.args.get('source','') }}" placeholder="e.g., ST01">
-    <label>Destination Station ID</label>
-    <input name="destination" value="{{ request.args.get('destination','') }}" placeholder="e.g., ST02">
-    <label>Travel Date</label>
-    <input type="date" name="date" value="{{ request.args.get('date','') }}">
+    <label>Source Station</label>
+    <select name="source">
+      <option value="any">Any</option>
+      {% for station in stations %}
+      <option value="{{ station['station_id'] }}" {% if request.args.get('source') == station['station_id'] %}selected{% endif %}>{{ station['station_name'] }} ({{ station['station_id'] }})</option>
+      {% endfor %}
+    </select>
+    <label>Destination Station</label>
+    <select name="destination">
+      <option value="any">Any</option>
+      {% for station in stations %}
+      <option value="{{ station['station_id'] }}" {% if request.args.get('destination') == station['station_id'] %}selected{% endif %}>{{ station['station_name'] }} ({{ station['station_id'] }})</option>
+      {% endfor %}
+    </select>
     <button class="btn" type="submit">Find</button>
   </form>
 </div>
@@ -31,9 +39,9 @@
         <td>{{ row['train_no'] }}</td>
         <td>{{ row['train_name'] }}</td>
         <td>{{ row['type'] }}</td>
-        <td>{{ row['source_departure'] }}</td>
-        <td>{{ row['destination_arrival'] }}</td>
-        <td><a class="btn" href="{{ url_for('train_detail', train_no=row['train_no'], source=request.args.get('source'), destination=request.args.get('destination'), date=request.args.get('date')) }}">View</a></td>
+        <td>{{ row['source_departure'] or 'N/A' }}</td>
+        <td>{{ row['destination_arrival'] or 'N/A' }}</td>
+        <td><a class="btn" href="{{ url_for('train_detail', train_no=row['train_no'], source=request.args.get('source'), destination=request.args.get('destination')) }}">View</a></td>
       </tr>
       {% endfor %}
     </table>

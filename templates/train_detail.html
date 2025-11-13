@@ -3,11 +3,27 @@
 <div class="card">
   <h2>Train {{ train.train_no }} — {{ train.train_name }}</h2>
   <p>Route: {{ train.route_id }} | Type: {{ train.type }}</p>
+  {% if date %}
   <p>Travel: {{ source }} → {{ destination }} on {{ date }}</p>
+  {% else %}
+  <p>Travel: {{ source }} → {{ destination }}</p>
+  <h3>Select Travel Date</h3>
+  {% if available_dates %}
+  <div>
+    {% for d in available_dates %}
+    <a class="btn" href="{{ url_for('train_detail', train_no=train.train_no, source=source, destination=destination, date=d) }}">{{ d.strftime('%Y-%m-%d') }} ({{ d.strftime('%a') }})</a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No available dates found.</p>
+  {% endif %}
+  {% endif %}
 </div>
 
+{% if date %}
 <div class="card">
   <h3>Classes & Availability</h3>
+  {% if source != "any" and destination != "any" %}
   <table>
     <tr>
       <th>Class ID</th><th>Name</th><th>Coach Type</th><th>Seats Available</th><th></th>
@@ -45,5 +61,9 @@
     </tr>
     {% endfor %}
   </table>
+  {% else %}
+  <p>Booking is not available when source or destination is set to "Any". Please search with specific stations.</p>
+  {% endif %}
 </div>
+{% endif %}
 {% endblock %}

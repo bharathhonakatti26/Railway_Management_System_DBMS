@@ -1,7 +1,7 @@
 \
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from dotenv import load_dotenv
 import mysql.connector
@@ -147,14 +147,15 @@ def search_trains():
     trains = None
     source = request.args.get("source")
     destination = request.args.get("destination")
-    date = request.args.get("date")
 
-    if source and destination and date:
+    stations = query("SELECT station_id, station_name FROM station ORDER BY station_name")
+
+    if source and destination and source != "any" and destination != "any":
         # use stored procedure search_trains
         conn = get_db()
         cur = conn.cursor(dictionary=True)
         try:
-            cur.callproc("search_trains", (source, destination, date))
+            cur.callproc("search_trains", (source, destination, None))  # date not used anyway
             for result in cur.stored_results():
                 trains = result.fetchall()
                 break
@@ -162,7 +163,10 @@ def search_trains():
             flash(f"Search error: {e}", "error")
         finally:
             cur.close(); conn.close()
-    return render_template("search_trains.html", title="Search Trains", trains=trains)
+    elif source == "any" or destination == "any":
+        # If any is selected, show all trains
+        trains = query("SELECT train_no, train_name, type, NULL as source_departure, NULL as destination_arrival FROM train")
+    return render_template("search_trains.html", title="Search Trains", trains=trains, stations=stations)
 
 @app.route("/train/<train_no>")
 @login_required(role="passenger")
@@ -175,6 +179,19 @@ def train_detail(train_no):
     if not train:
         flash("Train not found", "error")
         return redirect(url_for("search_trains"))
+
+    available_dates = []
+    if not date:
+        schedule = query("SELECT running_days FROM schedule WHERE train_no=%s", (train_no,), fetch="one")
+        if schedule and schedule['running_days']:
+            running_days = [day.strip() for day in schedule['running_days'].split(',')]
+            day_map = {'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5, 'Sun': 6}
+            today = datetime.now().date()
+            for i in range(30):  # next 30 days
+                check_date = today + timedelta(days=i)
+                day_name = check_date.strftime('%a')
+                if day_name in running_days:
+                    available_dates.append(check_date)
 
     # fetch classes for the train and availability via function get_available_seats
     classes = query("SELECT class_id, class_name, coach_type FROM class WHERE train_no=%s", (train_no,))
@@ -194,7 +211,7 @@ def train_detail(train_no):
     return render_template("train_detail.html",
                            title="Train Detail",
                            train=train, classes=classes_info,
-                           source=source, destination=destination, date=date)
+                           source=source, destination=destination, date=date, available_dates=available_dates)
 
 @app.route("/book/<train_no>", methods=["POST"])
 @login_required(role="passenger")
