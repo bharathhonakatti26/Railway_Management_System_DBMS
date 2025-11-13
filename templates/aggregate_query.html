@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Aggregate Query</h2>
+  <p><strong>Query:</strong> Total bookings and revenue per train</p>
+  <form method="post">
+    <button class="btn" type="submit">Execute Query</button>
+  </form>
+</div>
+
+{% if results is not none %}
+<div class="card">
+  <h3>Results</h3>
+  {% if results %}
+    <table>
+      <tr>
+        <th>Train Name</th>
+        <th>Total Bookings</th>
+        <th>Total Revenue</th>
+      </tr>
+      {% for row in results %}
+      <tr>
+        <td>{{ row['train_name'] }}</td>
+        <td>{{ row['total_bookings'] }}</td>
+        <td>₹{{ row['total_revenue'] or 0 }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No results found.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

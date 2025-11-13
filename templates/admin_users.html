@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Manage Users</h2>
+  <a class="btn" href="{{ url_for('admin_add_user') }}">Add New User</a>
+</div>
+
+<div class="card">
+  <h3>All Users</h3>
+  {% if users %}
+    <table>
+      <tr>
+        <th>User ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Actions</th>
+      </tr>
+      {% for user in users %}
+      <tr>
+        <td>{{ user['user_id'] }}</td>
+        <td>{{ user['name'] }}</td>
+        <td>{{ user['email'] }}</td>
+        <td>{{ user['role'] }}</td>
+        <td>
+          <a class="btn secondary" href="{{ url_for('admin_delete_user', user_id=user['user_id']) }}" onclick="return confirm('Are you sure?')">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No users found.</p>
+  {% endif %}
+</div>
+{% endblock %}

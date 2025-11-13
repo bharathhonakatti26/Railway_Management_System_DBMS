@@ -59,7 +59,7 @@ def call_proc(name, args):
 @app.route("/")
 def home():
     if session.get("role") == "admin":
-        return redirect(url_for("admin_dashboard"))
+        return redirect(url_for("admin"))
     if session.get("role") == "passenger":
         return redirect(url_for("user_dashboard"))
     return redirect(url_for("login"))
@@ -77,7 +77,7 @@ def login():
             session["name"] = "Administrator"
             session["role"] = "admin"
             flash("Logged in as admin.", "success")
-            return redirect(url_for("admin_dashboard"))
+            return redirect(url_for("admin"))
 
         # Otherwise from user table
         row = query("SELECT * FROM user WHERE email=%s AND password=%s", (email, password), fetch="one")
@@ -86,7 +86,7 @@ def login():
             session["name"] = row["name"]
             session["role"] = row["role"] or "passenger"
             flash("Login successful.", "success")
-            return redirect(url_for("user_dashboard" if session["role"] != "admin" else "admin_dashboard"))
+            return redirect(url_for("user_dashboard" if session["role"] != "admin" else "admin"))
         else:
             flash("Invalid credentials.", "error")
 
@@ -286,8 +286,47 @@ def cancel_ticket():
 # --------------- Admin -------------------
 @app.route("/admin")
 @login_required(role="admin")
-def admin_dashboard():
+def admin():
     return render_template("admin_dashboard.html", title="Admin")
+
+@app.route("/admin/users")
+@login_required(role="admin")
+def admin_users():
+    users = query("SELECT user_id, name, email, role FROM user ORDER BY name")
+    return render_template("admin_users.html", title="Manage Users", users=users)
+
+@app.route("/admin/add-user", methods=["GET", "POST"])
+@login_required(role="admin")
+def admin_add_user():
+    if request.method == "POST":
+        f = request.form
+        try:
+            execute(
+                "INSERT INTO user (user_id, name, email, password, dob, gender, city, state, pin_code, role) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    f.get("user_id"), f.get("name"), f.get("email"), f.get("password"),
+                    f.get("dob") or None, f.get("gender") or None,
+                    f.get("city"), f.get("state"), f.get("pin_code"), f.get("role", "passenger")
+                )
+            )
+            if f.get("mobile"):
+                execute("INSERT INTO user_mobile (user_id, mobile_no) VALUES (%s,%s)", (f.get("user_id"), f.get("mobile")))
+            flash("User created successfully.", "success")
+            return redirect(url_for("admin_users"))
+        except mysql.connector.Error as e:
+            flash(f"Error creating user: {e}", "error")
+    return render_template("admin_add_user.html", title="Add User")
+
+@app.route("/admin/delete-user/<user_id>")
+@login_required(role="admin")
+def admin_delete_user(user_id):
+    try:
+        execute("DELETE FROM user WHERE user_id = %s", (user_id,))
+        flash("User deleted successfully.", "success")
+    except mysql.connector.Error as e:
+        flash(f"Error deleting user: {e}", "error")
+    return redirect(url_for("admin_users"))
 
 @app.route("/admin/trains")
 @login_required(role="admin")
@@ -401,6 +440,108 @@ def admin_delete_train(train_no):
     except mysql.connector.Error as e:
         flash(f"Error deleting train: {e}", "error")
     return redirect(url_for("admin_trains"))
+
+@app.route("/database-objects")
+@login_required(role="admin")
+def database_objects():
+    return render_template("database_objects.html", title="Database Objects")
+
+@app.route("/view-triggers")
+@login_required(role="admin")
+def view_triggers():
+    # Get trigger definitions
+    triggers = query("""
+    SELECT TRIGGER_NAME, EVENT_OBJECT_TABLE, ACTION_TIMING, EVENT_MANIPULATION, ACTION_STATEMENT
+    FROM information_schema.TRIGGERS 
+    WHERE TRIGGER_SCHEMA = DATABASE()
+    ORDER BY TRIGGER_NAME
+    """)
+    return render_template("view_triggers.html", title="Database Triggers", triggers=triggers)
+
+@app.route("/view-procedures")
+@login_required(role="admin")
+def view_procedures():
+    # Get procedure definitions
+    procedures = query("""
+    SELECT ROUTINE_NAME, ROUTINE_TYPE, ROUTINE_DEFINITION
+    FROM information_schema.ROUTINES 
+    WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_TYPE = 'PROCEDURE'
+    ORDER BY ROUTINE_NAME
+    """)
+    return render_template("view_procedures.html", title="Stored Procedures", procedures=procedures)
+
+@app.route("/view-functions")
+@login_required(role="admin")
+def view_functions():
+    # Get function definitions
+    functions = query("""
+    SELECT ROUTINE_NAME, ROUTINE_TYPE, ROUTINE_DEFINITION
+    FROM information_schema.ROUTINES 
+    WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_TYPE = 'FUNCTION'
+    ORDER BY ROUTINE_NAME
+    """)
+    return render_template("view_functions.html", title="Database Functions", functions=functions)
+
+# --------------- Queries -------------------
+@app.route("/queries")
+@login_required(role="admin")
+def queries():
+    return render_template("queries.html", title="Database Queries")
+
+@app.route("/nested-query", methods=["GET", "POST"])
+@login_required(role="admin")
+def nested_query():
+    results = None
+    if request.method == "POST":
+        # Nested Query: Find users who have booked tickets on trains that have available seats > 10
+        sql = """
+        SELECT DISTINCT u.name, u.email, t.train_no, tr.train_name
+        FROM user u
+        JOIN ticket t ON u.user_id = t.user_id
+        JOIN train tr ON t.train_no = tr.train_no
+        WHERE t.train_no IN (
+            SELECT sa.train_no
+            FROM seat_availability sa
+            WHERE sa.available_seats > 10
+        )
+        ORDER BY u.name
+        """
+        results = query(sql)
+    return render_template("nested_query.html", title="Nested Query", results=results)
+
+@app.route("/join-query", methods=["GET", "POST"])
+@login_required(role="admin")
+def join_query():
+    results = None
+    if request.method == "POST":
+        # Join Query: Show booking details with user and train info
+        sql = """
+        SELECT t.pnr_no, u.name, u.email, tr.train_name, t.source_station, t.destination_station, 
+               t.travel_date, t.total_fare, t.status
+        FROM ticket t
+        JOIN user u ON t.user_id = u.user_id
+        JOIN train tr ON t.train_no = tr.train_no
+        ORDER BY t.booking_time DESC
+        """
+        results = query(sql)
+    return render_template("join_query.html", title="Join Query", results=results)
+
+@app.route("/aggregate-query", methods=["GET", "POST"])
+@login_required(role="admin")
+def aggregate_query():
+    results = None
+    if request.method == "POST":
+        # Aggregate Query: Total bookings and revenue per train
+        sql = """
+        SELECT tr.train_name, COUNT(t.pnr_no) as total_bookings, 
+               SUM(t.total_fare) as total_revenue
+        FROM train tr
+        LEFT JOIN ticket t ON tr.train_no = t.train_no AND t.status = 'booked'
+        GROUP BY tr.train_no, tr.train_name
+        ORDER BY total_bookings DESC
+        """
+        results = query(sql)
+    return render_template("aggregate_query.html", title="Aggregate Query", results=results)
 
 # --------------- Misc -------------------
 @app.errorhandler(404)

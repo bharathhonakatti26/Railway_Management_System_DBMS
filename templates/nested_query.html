@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Nested Query</h2>
+  <p><strong>Query:</strong> Find users who have booked tickets on trains that have available seats > 10</p>
+  <form method="post">
+    <button class="btn" type="submit">Execute Query</button>
+  </form>
+</div>
+
+{% if results is not none %}
+<div class="card">
+  <h3>Results</h3>
+  {% if results %}
+    <table>
+      <tr>
+        <th>User Name</th>
+        <th>Email</th>
+        <th>Train No</th>
+        <th>Train Name</th>
+      </tr>
+      {% for row in results %}
+      <tr>
+        <td>{{ row['name'] }}</td>
+        <td>{{ row['email'] }}</td>
+        <td>{{ row['train_no'] }}</td>
+        <td>{{ row['train_name'] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No results found.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

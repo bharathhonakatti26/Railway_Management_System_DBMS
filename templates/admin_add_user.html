@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Add New User</h2>
+  <form method="post">
+    <label>User ID (e.g., U011)</label>
+    <input name="user_id" required>
+    <label>Name</label>
+    <input name="name" required>
+    <label>Email</label>
+    <input type="email" name="email" required>
+    <label>Password</label>
+    <input type="password" name="password" required>
+    <label>Role</label>
+    <select name="role" required>
+      <option value="passenger">Passenger</option>
+      <option value="employee">Employee</option>
+      <option value="admin">Admin</option>
+    </select>
+    <label>Date of Birth</label>
+    <input type="date" name="dob">
+    <label>Gender</label>
+    <select name="gender">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="other">Other</option>
+    </select>
+    <label>City</label>
+    <input name="city">
+    <label>State</label>
+    <input name="state">
+    <label>PIN Code</label>
+    <input name="pin_code">
+    <label>Mobile</label>
+    <input name="mobile">
+    <button class="btn" type="submit">Create User</button>
+  </form>
+</div>
+{% endblock %}

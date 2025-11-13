@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Stored Procedures</h2>
+  <p>All stored procedures in the database:</p>
+</div>
+
+{% if procedures %}
+<div class="card">
+  <table>
+    <tr>
+      <th>Procedure Name</th>
+      <th>Type</th>
+      <th>Definition</th>
+    </tr>
+    {% for proc in procedures %}
+    <tr>
+      <td>{{ proc['ROUTINE_NAME'] }}</td>
+      <td>{{ proc['ROUTINE_TYPE'] }}</td>
+      <td><pre>{{ proc['ROUTINE_DEFINITION'][:200] }}...</pre></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <p>No procedures found.</p>
+</div>
+{% endif %}
+{% endblock %}

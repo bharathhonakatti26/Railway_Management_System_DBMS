@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Join Query</h2>
+  <p><strong>Query:</strong> Show booking details with user and train information</p>
+  <form method="post">
+    <button class="btn" type="submit">Execute Query</button>
+  </form>
+</div>
+
+{% if results is not none %}
+<div class="card">
+  <h3>Results</h3>
+  {% if results %}
+    <table>
+      <tr>
+        <th>PNR</th>
+        <th>User Name</th>
+        <th>Email</th>
+        <th>Train Name</th>
+        <th>Source</th>
+        <th>Destination</th>
+        <th>Travel Date</th>
+        <th>Fare</th>
+        <th>Status</th>
+      </tr>
+      {% for row in results %}
+      <tr>
+        <td>{{ row['pnr_no'] }}</td>
+        <td>{{ row['name'] }}</td>
+        <td>{{ row['email'] }}</td>
+        <td>{{ row['train_name'] }}</td>
+        <td>{{ row['source_station'] }}</td>
+        <td>{{ row['destination_station'] }}</td>
+        <td>{{ row['travel_date'] }}</td>
+        <td>₹{{ row['total_fare'] }}</td>
+        <td>{{ row['status'] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No results found.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

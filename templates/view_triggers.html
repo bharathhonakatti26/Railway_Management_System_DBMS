@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Database Triggers</h2>
+  <p>All triggers in the database:</p>
+</div>
+
+{% if triggers %}
+<div class="card">
+  <table>
+    <tr>
+      <th>Trigger Name</th>
+      <th>Table</th>
+      <th>Timing</th>
+      <th>Event</th>
+      <th>Action</th>
+    </tr>
+    {% for trigger in triggers %}
+    <tr>
+      <td>{{ trigger['TRIGGER_NAME'] }}</td>
+      <td>{{ trigger['EVENT_OBJECT_TABLE'] }}</td>
+      <td>{{ trigger['ACTION_TIMING'] }}</td>
+      <td>{{ trigger['EVENT_MANIPULATION'] }}</td>
+      <td><pre>{{ trigger['ACTION_STATEMENT'][:100] }}...</pre></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <p>No triggers found.</p>
+</div>
+{% endif %}
+{% endblock %}

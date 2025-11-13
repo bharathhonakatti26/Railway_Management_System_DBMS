@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Database Objects & Queries</h2>
+  <p>Select an option:</p>
+  <div class="grid">
+    <div class="card">
+      <h3>View Triggers</h3>
+      <p>Display all database triggers and their definitions</p>
+      <a class="btn" href="{{ url_for('view_triggers') }}">View</a>
+    </div>
+    <div class="card">
+      <h3>View Procedures</h3>
+      <p>Display all stored procedures and their definitions</p>
+      <a class="btn" href="{{ url_for('view_procedures') }}">View</a>
+    </div>
+    <div class="card">
+      <h3>View Functions</h3>
+      <p>Display all database functions and their definitions</p>
+      <a class="btn" href="{{ url_for('view_functions') }}">View</a>
+    </div>
+    <div class="card">
+      <h3>Nested Query</h3>
+      <p>Find users who have booked tickets on trains with available seats > 10</p>
+      <a class="btn" href="{{ url_for('nested_query') }}">Execute</a>
+    </div>
+    <div class="card">
+      <h3>Join Query</h3>
+      <p>Show booking details with user and train information</p>
+      <a class="btn" href="{{ url_for('join_query') }}">Execute</a>
+    </div>
+    <div class="card">
+      <h3>Aggregate Query</h3>
+      <p>Total bookings and revenue per train</p>
+      <a class="btn" href="{{ url_for('aggregate_query') }}">Execute</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

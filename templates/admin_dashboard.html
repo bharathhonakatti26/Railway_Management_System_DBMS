@@ -13,6 +13,16 @@
       <p>View all trains & schedules.</p>
       <a class="btn" href="{{ url_for('admin_trains') }}">Open</a>
     </div>
+    <div class="card">
+      <h3>Manage Users</h3>
+      <p>Create and manage user accounts with different roles.</p>
+      <a class="btn" href="{{ url_for('admin_users') }}">Open</a>
+    </div>
+    <div class="card">
+      <h3>Database Queries</h3>
+      <p>Execute nested, join, and aggregate queries.</p>
+      <a class="btn" href="{{ url_for('queries') }}">View Queries</a>
+    </div>
   </div>
 </div>
 {% endblock %}

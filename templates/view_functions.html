@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Database Functions</h2>
+  <p>All functions in the database:</p>
+</div>
+
+{% if functions %}
+<div class="card">
+  <table>
+    <tr>
+      <th>Function Name</th>
+      <th>Type</th>
+      <th>Definition</th>
+    </tr>
+    {% for func in functions %}
+    <tr>
+      <td>{{ func['ROUTINE_NAME'] }}</td>
+      <td>{{ func['ROUTINE_TYPE'] }}</td>
+      <td><pre>{{ func['ROUTINE_DEFINITION'][:200] }}...</pre></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% else %}
+<div class="card">
+  <p>No functions found.</p>
+</div>
+{% endif %}
+{% endblock %}
